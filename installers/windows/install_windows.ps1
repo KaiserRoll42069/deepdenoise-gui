@@ -114,15 +114,23 @@ foreach ($pkg in $reqs) {
 # 5. Download Pretrained Weights & Configure Portable Paths
 Write-Host "`n[5/6] Checking Pretrained Networks & Dynamic Paths..." -ForegroundColor Yellow
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$weightsDir = Join-Path $scriptDir "pretrained_networks"
-$downloader = Join-Path $scriptDir "download_weights.py"
+if (Test-Path (Join-Path $scriptDir "deeprep_gui.py")) {
+    $rootDir = $scriptDir
+} elseif (Test-Path (Join-Path (Split-Path -Parent (Split-Path -Parent $scriptDir)) "deeprep_gui.py")) {
+    $rootDir = Split-Path -Parent (Split-Path -Parent $scriptDir)
+} else {
+    $rootDir = $scriptDir
+}
+
+$weightsDir = Join-Path $rootDir "pretrained_networks"
+$downloader = Join-Path $rootDir "download_weights.py"
 
 if (Test-Path $downloader) {
     & $pythonExe $downloader $weightsDir
 }
 
 # Write portable admin/local.py
-$adminDir = Join-Path $scriptDir "admin"
+$adminDir = Join-Path $rootDir "admin"
 if (Test-Path $adminDir) {
     $localPy = Join-Path $adminDir "local.py"
     $localContent = @"
@@ -149,7 +157,8 @@ class EnvironmentSettings:
 # 6. Darktable Integration
 Write-Host "`n[6/6] Checking Darktable Installation..." -ForegroundColor Yellow
 $dtLuaContrib = "$env:LOCALAPPDATA\darktable\lua\contrib"
-$deeprepLua = Join-Path $scriptDir "deeprep.lua"
+$deeprepLua = Join-Path $rootDir "deeprep.lua"
+$deeprepGui = Join-Path $rootDir "deeprep_gui.py"
 
 if (Test-Path $deeprepLua) {
     if (Test-Path $dtLuaContrib) {
@@ -197,7 +206,7 @@ if (Test-Path $deeprepLua) {
 }
 
 # Create Launcher Batch File
-$launcherBat = Join-Path $scriptDir "run_deeprep.bat"
+$launcherBat = Join-Path $rootDir "run_deeprep.bat"
 $batContent = @"
 @echo off
 setlocal
