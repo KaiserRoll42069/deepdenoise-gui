@@ -2,6 +2,7 @@ import torch
 
 import math
 import sys
+import os
 
 try:
     from external.pwcnet.correlation import correlation # the custom cost volume layer
@@ -241,7 +242,10 @@ class PWCNet(torch.nn.Module):
             if weights_path is None:
                 raise Exception
             else:
-                weights_dict = torch.load(weights_path)
+                print(f"[DEBUG] Current Working Dir: {os.getcwd()}")
+                print(f"[DEBUG] Target Weights Path: {weights_path}")
+                print(f"[DEBUG] File Exists? {os.path.exists(weights_path)}")
+                weights_dict = torch.load(weights_path, map_location='cpu', mmap=False)
                 self.net.load_state_dict({strKey.replace('module', 'net'): tenWeight for strKey, tenWeight
                                           in weights_dict.items()})
 

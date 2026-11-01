@@ -1,8 +1,39 @@
+# Byte-compiled / cache
 **/__pycache__
 **/.ipynb_checkpoints
 **/*.pyc
 *.idea
+*.vscode
+
+# Pretrained model weights (downloaded on setup via download_weights.py)
 **/*.pth.tar
 **/*.pth
-admin/local.py
 pretrained_networks/*
+
+# Local environment settings
+admin/local.py
+
+# RAW burst image samples (CR2, DNG, etc.)
+*.dng
+*.DNG
+*.cr2
+*.CR2
+CRW_*
+_MG_*
+sample*.dng
+input_*.dng
+test_*.dng
+
+# Output and rendered images
+*.png
+*.jpg
+*.jpeg
+output_test/
+
+# Scratch & development benchmark scripts
+inspect_*.py
+test_*.py
+profile_*.py
+benchmark_*.py
+analyze_*.py
+verify_*.py
