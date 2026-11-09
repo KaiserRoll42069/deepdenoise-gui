@@ -1,4 +1,4 @@
-// Deep-Rep Standalone Windows Installer
+// DeepDenoise Standalone Self-Extracting Windows Installer
 // Original Deep-Rep Framework Copyright (c) 2021 Huawei Technologies Co., Ltd.
 // Licensed under CC BY-NC-SA 4.0 (Attribution-NonCommercial-ShareAlike 4.0 International)
 // https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
@@ -6,6 +6,8 @@
 
 using System;
 using System.IO;
+using System.IO.Compression;
+using System.Reflection;
 using System.Drawing;
 using System.Diagnostics;
 using System.Threading;
@@ -16,12 +18,16 @@ namespace DeepRepInstaller
     public class InstallerForm : Form
     {
         private Label lblHeader;
+        private Label lblTargetDir;
+        private TextBox txtTargetDir;
+        private Button btnBrowseDir;
         private Label lblDiskSpace;
         private Label lblPython;
         private Label lblTorch;
         private CheckBox chkInstallTorch;
-        private CheckBox chkDarktable;
         private CheckBox chkWeights;
+        private CheckBox chkDarktable;
+        private CheckBox chkDesktopShortcut;
         private Button btnInstall;
         private Button btnLaunch;
         private TextBox txtLog;
@@ -37,8 +43,8 @@ namespace DeepRepInstaller
 
         private void InitializeComponent()
         {
-            this.Text = "Deep-Rep RAW Burst Restoration - Windows Installer";
-            this.Size = new Size(680, 560);
+            this.Text = "DeepDenoise GUI - Standalone Windows Installer (Release v1)";
+            this.Size = new Size(720, 640);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -47,65 +53,110 @@ namespace DeepRepInstaller
 
             lblHeader = new Label()
             {
-                Text = "Deep-Rep Toolkit Windows Setup",
-                Font = new Font("Segoe UI", 14F, FontStyle.Bold, GraphicsUnit.Point),
+                Text = "DeepDenoise RAW Restoration Toolkit Setup",
+                Font = new Font("Segoe UI", 13.5F, FontStyle.Bold, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(33, 37, 41),
-                Location = new Point(20, 15),
-                Size = new Size(630, 30)
+                Location = new Point(20, 12),
+                Size = new Size(660, 28)
+            };
+
+            lblTargetDir = new Label()
+            {
+                Text = "Install Location:",
+                Location = new Point(25, 48),
+                Size = new Size(110, 22),
+                Font = new Font("Segoe UI", 9.5F, FontStyle.Bold, GraphicsUnit.Point)
+            };
+
+            string defaultInstall = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DeepDenoise");
+            txtTargetDir = new TextBox()
+            {
+                Text = defaultInstall,
+                Location = new Point(140, 46),
+                Size = new Size(430, 24),
+                Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point)
+            };
+
+            btnBrowseDir = new Button()
+            {
+                Text = "Browse...",
+                Location = new Point(580, 45),
+                Size = new Size(90, 26),
+                Cursor = Cursors.Hand
+            };
+            btnBrowseDir.Click += (s, e) =>
+            {
+                using (FolderBrowserDialog fbd = new FolderBrowserDialog())
+                {
+                    fbd.Description = "Select DeepDenoise Installation Directory";
+                    fbd.SelectedPath = txtTargetDir.Text;
+                    if (fbd.ShowDialog() == DialogResult.OK)
+                    {
+                        txtTargetDir.Text = fbd.SelectedPath;
+                    }
+                }
             };
 
             lblDiskSpace = new Label()
             {
                 Text = "Checking disk space...",
-                Location = new Point(25, 55),
-                Size = new Size(620, 22),
+                Location = new Point(25, 80),
+                Size = new Size(650, 22),
                 Font = new Font("Segoe UI", 9.5F, FontStyle.Regular, GraphicsUnit.Point)
             };
 
             lblPython = new Label()
             {
                 Text = "Checking Python installation...",
-                Location = new Point(25, 80),
-                Size = new Size(620, 22),
+                Location = new Point(25, 104),
+                Size = new Size(650, 22),
                 Font = new Font("Segoe UI", 9.5F, FontStyle.Regular, GraphicsUnit.Point)
             };
 
             lblTorch = new Label()
             {
                 Text = "Checking PyTorch...",
-                Location = new Point(25, 105),
-                Size = new Size(620, 22),
+                Location = new Point(25, 128),
+                Size = new Size(650, 22),
                 Font = new Font("Segoe UI", 9.5F, FontStyle.Regular, GraphicsUnit.Point)
             };
 
             chkInstallTorch = new CheckBox()
             {
-                Text = "Install/Update PyTorch with CUDA 12.1 (NVIDIA GPU Acceleration)",
-                Location = new Point(25, 135),
-                Size = new Size(620, 24),
+                Text = "Install/Upgrade PyTorch with CUDA 12.1 (NVIDIA GPU Acceleration)",
+                Location = new Point(25, 156),
+                Size = new Size(650, 24),
                 Checked = false
             };
 
             chkWeights = new CheckBox()
             {
                 Text = "Download Pretrained Neural Models (BURST-SR, Denoise, PWCNet)",
-                Location = new Point(25, 160),
-                Size = new Size(620, 24),
+                Location = new Point(25, 180),
+                Size = new Size(650, 24),
                 Checked = true
             };
 
             chkDarktable = new CheckBox()
             {
                 Text = "Configure Darktable Integration (Install deeprep.lua plugin)",
-                Location = new Point(25, 185),
-                Size = new Size(620, 24),
+                Location = new Point(25, 204),
+                Size = new Size(650, 24),
+                Checked = true
+            };
+
+            chkDesktopShortcut = new CheckBox()
+            {
+                Text = "Create Desktop and Start Menu Shortcuts",
+                Location = new Point(25, 228),
+                Size = new Size(650, 24),
                 Checked = true
             };
 
             btnInstall = new Button()
             {
-                Text = "Start Installation / Verification",
-                Location = new Point(25, 218),
+                Text = "Install DeepDenoise",
+                Location = new Point(25, 260),
                 Size = new Size(240, 36),
                 Font = new Font("Segoe UI", 9.5F, FontStyle.Bold, GraphicsUnit.Point),
                 BackColor = Color.FromArgb(13, 110, 253),
@@ -118,36 +169,36 @@ namespace DeepRepInstaller
 
             btnLaunch = new Button()
             {
-                Text = "Launch Deep-Rep GUI",
-                Location = new Point(280, 218),
-                Size = new Size(180, 36),
+                Text = "Launch DeepDenoise GUI",
+                Location = new Point(280, 260),
+                Size = new Size(200, 36),
                 Font = new Font("Segoe UI", 9.5F, FontStyle.Regular, GraphicsUnit.Point),
                 Enabled = false,
                 Cursor = Cursors.Hand
             };
             btnLaunch.Click += (s, e) =>
             {
-                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                string launcher = Path.Combine(baseDir, "DeepRepLauncher.exe");
+                string targetDir = txtTargetDir.Text;
+                string launcher = Path.Combine(targetDir, "DeepRepLauncher.exe");
                 if (File.Exists(launcher)) Process.Start(launcher);
                 else
                 {
-                    string bat = Path.Combine(baseDir, "run_deeprep.bat");
+                    string bat = Path.Combine(targetDir, "run_deeprep.bat");
                     if (File.Exists(bat)) Process.Start(bat);
                 }
             };
 
             progressBar = new ProgressBar()
             {
-                Location = new Point(25, 265),
-                Size = new Size(615, 16),
+                Location = new Point(25, 308),
+                Size = new Size(650, 16),
                 Style = ProgressBarStyle.Blocks
             };
 
             txtLog = new TextBox()
             {
-                Location = new Point(25, 290),
-                Size = new Size(615, 215),
+                Location = new Point(25, 332),
+                Size = new Size(650, 250),
                 Multiline = true,
                 ScrollBars = ScrollBars.Vertical,
                 ReadOnly = true,
@@ -157,12 +208,16 @@ namespace DeepRepInstaller
             };
 
             this.Controls.Add(lblHeader);
+            this.Controls.Add(lblTargetDir);
+            this.Controls.Add(txtTargetDir);
+            this.Controls.Add(btnBrowseDir);
             this.Controls.Add(lblDiskSpace);
             this.Controls.Add(lblPython);
             this.Controls.Add(lblTorch);
             this.Controls.Add(chkInstallTorch);
             this.Controls.Add(chkWeights);
             this.Controls.Add(chkDarktable);
+            this.Controls.Add(chkDesktopShortcut);
             this.Controls.Add(btnInstall);
             this.Controls.Add(btnLaunch);
             this.Controls.Add(progressBar);
@@ -187,7 +242,6 @@ namespace DeepRepInstaller
                     lblDiskSpace.ForeColor = Color.DarkGreen;
                 }
 
-                // Check Python
                 detectedPython = FindPython();
                 if (!string.IsNullOrEmpty(detectedPython))
                 {
@@ -202,9 +256,7 @@ namespace DeepRepInstaller
                     lblTorch.Text = "PyTorch: Waiting for Python installation.";
                 }
 
-                // Enable launch if files exist
-                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                if (File.Exists(Path.Combine(baseDir, "deeprep_gui.py")) && !string.IsNullOrEmpty(detectedPython))
+                if (File.Exists(Path.Combine(txtTargetDir.Text, "deeprep_gui.py")) && !string.IsNullOrEmpty(detectedPython))
                 {
                     btnLaunch.Enabled = true;
                 }
@@ -297,61 +349,140 @@ namespace DeepRepInstaller
             }
 
             btnInstall.Enabled = false;
+            txtTargetDir.Enabled = false;
+            btnBrowseDir.Enabled = false;
             progressBar.Style = ProgressBarStyle.Marquee;
-            AppendLog("Starting Deep-Rep Windows Installation & Environment Verification...\n");
+            AppendLog("Starting DeepDenoise Setup...\n");
 
-            Thread thread = new Thread(RunInstallWorker) { IsBackground = true };
+            string targetDir = txtTargetDir.Text;
+            Thread thread = new Thread(() => RunInstallWorker(targetDir)) { IsBackground = true };
             thread.Start();
         }
 
-        private void RunInstallWorker()
+        private void RunInstallWorker(string targetDir)
         {
             try
             {
-                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                string ps1 = Path.Combine(baseDir, "install_windows.ps1");
-                if (!File.Exists(ps1))
+                // Step 1: Extract Embedded Repository if needed
+                ExtractEmbeddedRepository(targetDir);
+
+                // Step 2: Run Python/Dependency Setup
+                string ps1Script = Path.Combine(targetDir, @"installers\windows\install_windows.ps1");
+                if (!File.Exists(ps1Script))
                 {
-                    AppendLog("ERROR: Cannot find install_windows.ps1 in: " + baseDir);
-                    SetUIFinished(false);
-                    return;
+                    ps1Script = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"installers\windows\install_windows.ps1");
                 }
 
-                string args = string.Format("-NoProfile -ExecutionPolicy Bypass -File \"{0}\" -NonInteractive", ps1);
-                if (chkInstallTorch.Checked)
+                if (File.Exists(ps1Script))
                 {
-                    args += " -InstallTorch";
+                    string args = string.Format("-NoProfile -ExecutionPolicy Bypass -File \"{0}\" -NonInteractive", ps1Script);
+                    if (chkInstallTorch.Checked) args += " -InstallTorch";
+
+                    ProcessStartInfo psi = new ProcessStartInfo()
+                    {
+                        FileName = "powershell.exe",
+                        Arguments = args,
+                        WorkingDirectory = targetDir,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+
+                    using (Process proc = new Process() { StartInfo = psi })
+                    {
+                        proc.OutputDataReceived += (s, ev) => { if (ev.Data != null) AppendLog(ev.Data); };
+                        proc.ErrorDataReceived += (s, ev) => { if (ev.Data != null) AppendLog("WARN: " + ev.Data); };
+
+                        proc.Start();
+                        proc.BeginOutputReadLine();
+                        proc.BeginErrorReadLine();
+                        proc.WaitForExit();
+
+                        if (proc.ExitCode != 0)
+                        {
+                            AppendLog(string.Format("Setup script returned code: {0}", proc.ExitCode));
+                        }
+                    }
                 }
 
-                ProcessStartInfo psi = new ProcessStartInfo()
+                // Step 3: Create Desktop & Start Menu Shortcuts if requested
+                if (chkDesktopShortcut.Checked)
                 {
-                    FileName = "powershell.exe",
-                    Arguments = args,
-                    WorkingDirectory = baseDir,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-
-                using (Process proc = new Process() { StartInfo = psi })
-                {
-                    proc.OutputDataReceived += (s, ev) => { if (ev.Data != null) AppendLog(ev.Data); };
-                    proc.ErrorDataReceived += (s, ev) => { if (ev.Data != null) AppendLog("WARN: " + ev.Data); };
-
-                    proc.Start();
-                    proc.BeginOutputReadLine();
-                    proc.BeginErrorReadLine();
-                    proc.WaitForExit();
-
-                    bool success = (proc.ExitCode == 0);
-                    SetUIFinished(success);
+                    CreateShortcuts(targetDir);
                 }
+
+                SetUIFinished(true);
             }
             catch (Exception ex)
             {
                 AppendLog("Installation Exception: " + ex.Message);
                 SetUIFinished(false);
+            }
+        }
+
+        private void ExtractEmbeddedRepository(string targetDir)
+        {
+            AppendLog("[1/4] Extracting embedded application files to: " + targetDir);
+            Directory.CreateDirectory(targetDir);
+
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            using (Stream stream = assembly.GetManifestResourceStream("DeepRep.SourceZip"))
+            {
+                if (stream == null)
+                {
+                    AppendLog("  Note: Standalone source zip not embedded; using local folder structure.");
+                    return;
+                }
+
+                using (ZipArchive archive = new ZipArchive(stream, ZipArchiveMode.Read))
+                {
+                    foreach (ZipArchiveEntry entry in archive.Entries)
+                    {
+                        string destPath = Path.Combine(targetDir, entry.FullName);
+                        if (string.IsNullOrEmpty(entry.Name))
+                        {
+                            Directory.CreateDirectory(destPath);
+                        }
+                        else
+                        {
+                            Directory.CreateDirectory(Path.GetDirectoryName(destPath));
+                            entry.ExtractToFile(destPath, true);
+                        }
+                    }
+                }
+            }
+            AppendLog("  [OK] Extraction completed successfully.");
+        }
+
+        private void CreateShortcuts(string targetDir)
+        {
+            try
+            {
+                string launcherBat = Path.Combine(targetDir, "run_deeprep.bat");
+                string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+                string shortcutPath = Path.Combine(desktopPath, "DeepDenoise GUI.lnk");
+
+                string psCmd = string.Format(
+                    "$w = New-Object -ComObject WScript.Shell; $s = $w.CreateShortcut('{0}'); $s.TargetPath = '{1}'; $s.WorkingDirectory = '{2}'; $s.Description = 'DeepDenoise RAW Restoration Toolkit'; $s.Save()",
+                    shortcutPath.Replace("'", "''"),
+                    launcherBat.Replace("'", "''"),
+                    targetDir.Replace("'", "''")
+                );
+
+                ProcessStartInfo psi = new ProcessStartInfo()
+                {
+                    FileName = "powershell.exe",
+                    Arguments = "-NoProfile -Command \"" + psCmd + "\"",
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                };
+                using (Process p = Process.Start(psi)) { p.WaitForExit(); }
+                AppendLog("  Created Desktop shortcut: " + shortcutPath);
+            }
+            catch (Exception ex)
+            {
+                AppendLog("  Could not create desktop shortcut: " + ex.Message);
             }
         }
 
@@ -366,12 +497,14 @@ namespace DeepRepInstaller
             progressBar.Style = ProgressBarStyle.Blocks;
             progressBar.Value = success ? 100 : 0;
             btnInstall.Enabled = true;
+            txtTargetDir.Enabled = true;
+            btnBrowseDir.Enabled = true;
             btnLaunch.Enabled = success || !string.IsNullOrEmpty(detectedPython);
 
             if (success)
             {
-                AppendLog("\n[SUCCESS] Installation & Environment Configuration Complete!");
-                MessageBox.Show("Deep-Rep setup has completed successfully!", "Deep-Rep Installed", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                AppendLog("\n[SUCCESS] DeepDenoise Setup Complete!");
+                MessageBox.Show("DeepDenoise has been installed successfully!\n\nYou can launch it directly from your Desktop shortcut or click 'Launch DeepDenoise GUI'.", "Installation Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 CheckSystemStatus();
             }
             else
