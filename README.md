@@ -43,31 +43,29 @@ A standalone cross-platform desktop application, command-line tool, and Darktabl
 
 ---
 
-## Installation
+## 🚀 Quick Download & Installation (No Git Clone Required)
 
-### Windows 10 / 11
+You do **not** need to clone this repository to use DeepDenoise! Download the standalone installer for your OS directly from the **[Releases Tab (Release v1)](https://github.com/KaiserRoll42069/deepdenoise-gui/releases/tag/v1)**:
 
-Ensure you have [Python 3.10, 3.11, or 3.12](https://www.python.org/downloads/) installed with "Add Python to PATH" enabled.
+### 🪟 Windows 10 / 11
+1. Download **[`DeepDenoise-Setup.exe`](https://github.com/KaiserRoll42069/deepdenoise-gui/releases/download/v1/DeepDenoise-Setup.exe)**.
+2. Double-click to run. The all-in-one setup wizard contains the complete application files embedded inside, checks available disk space ($\ge 4.0\text{ GB}$ safety threshold), verifies Python 3.10–3.12 & PyTorch GPU acceleration, streams neural weights, configures the Darktable Lua plugin, and creates Desktop & Start Menu shortcuts.
 
-#### Method 1: Graphical Setup (Recommended)
-Double-click **`DeepRepInstaller.exe`**.  
-The setup wizard verifies free disk space (requiring $\ge 4.0\text{ GB}$ headroom), checks your Python and PyTorch GPU environments, downloads pretrained models, configures Darktable, and creates desktop launchers.
-
-#### Method 2: Batch Launcher
-Double-click **`install_windows.bat`** (or execute `powershell -ExecutionPolicy Bypass -File install_windows.ps1`).
+### 🐧 Linux (Ubuntu, Debian, Fedora, Arch)
+1. Download **[`install_linux.sh`](https://github.com/KaiserRoll42069/deepdenoise-gui/releases/download/v1/install_linux.sh)**.
+2. In your terminal, run:
+   ```bash
+   chmod +x install_linux.sh
+   ./install_linux.sh
+   ```
+   The installer automatically fetches the release-pinned source archive (`deepdenoise-source.zip`), configures dependencies, downloads pretrained weights, registers Darktable integration, and generates desktop application shortcuts.
 
 ---
 
-### Linux (Ubuntu, Debian, Fedora, Arch)
-
-Open a terminal in the repository directory and run:
-
-```bash
-chmod +x install_linux.sh
-./install_linux.sh
-```
-
-The script verifies required packages, downloads model weights, creates `run_deeprep.sh`, and configures the Darktable Lua plugin in `~/.config/darktable/lua/`.
+### Alternative: Clone Repository Manually
+If you have cloned the Git repository directly:
+- **Windows**: Run `installers/windows/install_windows.bat`
+- **Linux**: Run `installers/linux/install_linux.sh`
 
 ---
 
